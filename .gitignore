@@ -50,3 +50,10 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# executables
+client
+fifo_server
+
+# Other files
+.DS_Store

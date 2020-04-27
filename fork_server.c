@@ -10,6 +10,7 @@
 #include <arpa/inet.h>
 #include <signal.h>
 #include <sys/wait.h>
+#include <errno.h>
 #include "common.h"
 
 #define PORT 4444
@@ -39,7 +40,7 @@ void sigchld_handler(int signo)
 	signal(SIGCHLD, sigchld_handler);
 }
 
-void handle_request(int c_socket)
+void handle_request(int c_socket_fd)
 {
 	char *buffer = malloc(BUFFER_SIZE);
 	char *aux_buffer = malloc(BUFFER_SIZE);
@@ -47,10 +48,11 @@ void handle_request(int c_socket)
 
 	bzero(buffer, BUFFER_SIZE);
 
-	if (recv(c_socket, buffer, BUFFER_SIZE, 0) <= 0)
+	if (recv(c_socket_fd, buffer, BUFFER_SIZE, 0) < 0)
 	{
 		free(buffer);
-		error("ERROR: It was not possible to receive message from client.\n");
+		printf("--------");
+		printf("ERROR: It was not possible to receive message from client.\n\t%s", strerror(errno));
 	}
 
 	// Gets file name
@@ -83,7 +85,7 @@ void handle_request(int c_socket)
 
 	sprintf(header, HTTP_RESPONSE, response);
 
-	if (send(c_socket, header, strlen(header), 0) == -1)
+	if (send(c_socket_fd, header, strlen(header), 0) == -1)
 	{
 		printf("ERROR: Data sending failed.\n");
 		free(header);
@@ -96,7 +98,7 @@ void handle_request(int c_socket)
 	int chunk_length;
 	while ((chunk_length = read(file, aux_buffer, BUFFER_SIZE)) > 0)
 	{
-		if (send(c_socket, aux_buffer, chunk_length, 0) == -1)
+		if (send(c_socket_fd, aux_buffer, chunk_length, 0) == -1)
 		{
 			printf("ERROR: Something went wrong while sending the file.\n");
 			return;
@@ -129,9 +131,12 @@ int main()
 	signal(SIGCHLD, sigchld_handler);
 
 	sockfd = socket(PF_INET, SOCK_STREAM, 0);
+	int option_yes = 1;
+	setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &option_yes, sizeof(option_yes));
+
 	if (sockfd < 0)
 	{
-		printf("[-]Error in connection.\n");
+		printf("[-]Error in connection:\n\t%s", strerror(errno));
 		exit(1);
 	}
 	printf("[+]Server Socket is created.\n");
@@ -144,18 +149,19 @@ int main()
 	ret = bind(sockfd, (struct sockaddr *)&serverAddr, sizeof(serverAddr));
 	if (ret < 0)
 	{
-		printf("[-]Error in binding.\n");
+		printf("[-]Error in binding:\n\t%s", strerror(errno));
 		exit(1);
 	}
-	printf("[+]Bind to port %d\n", PORT);
 
-	if (listen(sockfd, 100) == 0)
+	printf("[+]Bind to port %d\n", PORT);
+	ret = listen(sockfd, 100) == 0;
+	if (ret)
 	{
 		printf("[+]Listening....\n");
 	}
 	else
 	{
-		printf("[-]Error in binding.\n");
+		printf("[-]Error in binding:\n\t%s", strerror(errno));
 	}
 
 	while (1)

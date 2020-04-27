@@ -5,7 +5,7 @@
 // Servers ports
 #define FIFO_PORT 51717
 
-const int OK_HTTP = 200; // Success response
+#define OK_HTTP 200 // Success response
 const int HTTP_NOT_FOUND = 404; // File not found response
 
 const char * FILE_NOT_FOUND = "file_not_found.html";

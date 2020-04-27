@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <unistd.h>
 #include <sys/file.h>
 #include <sys/socket.h>
@@ -154,7 +155,7 @@ int main(){
 		printf("Connection accepted from %s:%d\n", inet_ntoa(newAddr.sin_addr), ntohs(newAddr.sin_port));
 		childpid = fork();
 
-		printf("childpid=%zu",childpid);
+		printf("childpid=%d",childpid);
 		// Error
 		if (childpid < 0)
 		{
@@ -167,7 +168,7 @@ int main(){
 			while(1){
 				
 				handle_request(newSocket);
-					
+				close(newSocket);
 			}
 		}
 		// Parent

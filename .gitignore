@@ -54,6 +54,7 @@ dkms.conf
 # executables
 client
 fifo_server
+fork_server
 
 # Other files
 .DS_Store

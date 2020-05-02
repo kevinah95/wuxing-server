@@ -1,20 +1,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
 #include <sys/file.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <sys/ipc.h>
+#include <errno.h>
+#include <sys/mman.h>
 #include "common.h"
 
-struct sockaddr_in server, client, cli_addr; // Handle the sockets' address
+struct sockaddr_in server, client; // Handle the sockets' address
 
 unsigned int client_lenght;
 
-int server_fd, client_socket; // Client and server file descriptors
+int server_fd; // Server file descriptors
 
 int response = OK_HTTP;
 
@@ -24,7 +28,6 @@ void error(const char *msg)
     exit(1);
 }
 
-// Inits the server
 void init()
 {
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -35,7 +38,7 @@ void init()
     bzero(&server, sizeof(server));
 
     // Information required by the server
-    server.sin_port = htons(FIFO_PORT);
+    server.sin_port = htons(THREAD_PORT);
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = htonl(INADDR_ANY);
 
@@ -52,17 +55,20 @@ void init()
     }
 }
 
-void handle_request(int c_socket)
+void * handle_request(void* c_socket)
 {
+    int *socket= (int *)c_socket;
+    int client_socket = *socket; 
+
     char *buffer = malloc(BUFFER_SIZE);
     char *aux_buffer = malloc(BUFFER_SIZE);
     int file;
 
     bzero(buffer, BUFFER_SIZE);
-    if (recv(c_socket, buffer, BUFFER_SIZE, 0) <= 0)
+    if (recv(client_socket, buffer, BUFFER_SIZE, 0) <= 0)
     {
         free(buffer);
-        error("ERROR: It was not possible to receive message from client.\n");
+        error("ERROR: It was not possible to receive the message from client.\n");
     }
 
     // Gets file name
@@ -95,12 +101,11 @@ void handle_request(int c_socket)
 
     sprintf(header, HTTP_RESPONSE, response);
 
-    if (send(c_socket, header, strlen(header), 0) == -1)
+    if (send(client_socket, header, strlen(header), 0) == -1)
     {
         printf("ERROR: Data sending failed.\n");
         free(header);
         close(file);
-        return;
     }
     free(header);
 
@@ -108,10 +113,9 @@ void handle_request(int c_socket)
     int chunk_length;
     while ((chunk_length = read(file, aux_buffer, BUFFER_SIZE)) > 0)
     {
-        if (send(c_socket, aux_buffer, chunk_length, 0) == -1)
+        if (send(client_socket, aux_buffer, chunk_length, 0) == -1)
         {
             printf("ERROR: Something went wrong while sending the file.\n");
-            return;
         }
     }
 
@@ -123,26 +127,36 @@ void handle_request(int c_socket)
 
 void listen_requests()
 {
+    pthread_t threads;
     while (1)
     {
         client_lenght = sizeof(client);
+        int *client_socket = malloc(sizeof(int)); 
 
-        if ((client_socket = accept(server_fd, (struct sockaddr *)&client, &client_lenght)) < 0)
+        if ((*client_socket = accept(server_fd, (struct sockaddr *)&client, &client_lenght)) < 0)
         {
             printf("ERROR: It was not possible to accept the request.\n");
         }
         else
         {
             printf("Attending client: %s\n", inet_ntoa(client.sin_addr));
-            handle_request(client_socket);
-            close(client_socket);
+
+            if ((pthread_create(&(threads), NULL, handle_request, client_socket)) != 0)
+            {
+                close(server_fd);
+                error("ERROR: Error creating pthread.\n");
+            }
+
+            pthread_join(threads, NULL);
+            close(*client_socket);
+            free(client_socket);
         }
     }
 }
 
 int main(int argc, char *argv[])
 {
-    printf("INFO: Initializing FIFO server.\n");
+    printf("INFO: Initializing THREAD server.\n");
     init();
     listen_requests();
     return 0;

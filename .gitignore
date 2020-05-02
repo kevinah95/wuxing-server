@@ -55,6 +55,8 @@ dkms.conf
 client
 fifo_server
 fork_server
+thread_server
 
 # Other files
 .DS_Store
+.vscode/

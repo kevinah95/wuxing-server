@@ -185,12 +185,8 @@ int main()
 		else if (childpid == 0)
 		{
 			close(sockfd);
-			while (1)
-			{
-
-				handle_request(newSocket);
-				close(newSocket);
-			}
+			handle_request(newSocket);
+			break;
 		}
 		// Parent
 		else

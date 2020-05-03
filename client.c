@@ -80,14 +80,15 @@ void *get(void *threads_st)
 		bzero(transfer_buffer, BUFFER_SIZE);
 		int received;
 		// Read message from position 9 ignoring 'HTTP/2.0'
-		if ((received = recv(cycle_socket, transfer_buffer, 9, 0)) <= 0)
+		if ((received = recv(cycle_socket, transfer_buffer, 9, 0)) < 0)
 		{
+			printf("Recived %i\n", received);
 			error("ERROR: There was an error in the transfer of data or the connection was lost.\n");
 		}
 
 		bzero(transfer_buffer, BUFFER_SIZE);
 		// Read HTTP message code: 200 or 404
-		if ((received = recv(cycle_socket, transfer_buffer, 3, 0)) <= 0)
+		if ((received = recv(cycle_socket, transfer_buffer, 3, 0)) < 0)
 		{
 			error("ERROR: There was an error in the transfer of data or the connection was lost.\n");
 		}

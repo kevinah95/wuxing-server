@@ -83,7 +83,6 @@ void handle_request(int c_socket)
     bzero(buffer, BUFFER_SIZE);
     int result;
     
-    printf("c_socket: %d\n", c_socket);
     result = recv(c_socket, buffer, BUFFER_SIZE, 0);
 
     if (result < 0)
@@ -148,6 +147,7 @@ void handle_request(int c_socket)
     close(file);
     free(aux_buffer);
     free(buffer);
+    close(c_socket);
 }
 
 void * listen_requests(void* thread_index)
@@ -175,7 +175,6 @@ void * listen_requests(void* thread_index)
         {
             printf("Attending client: %s\n", inet_ntoa(client.sin_addr));
             handle_request(client_socket);
-            close(client_socket);
         }
 
         sem_post(&shared->mutex); 
@@ -262,5 +261,4 @@ int main(int argc, char *argv[])
     pthreads_factory(argc, argv);
     init();
     return 0;
-
 }

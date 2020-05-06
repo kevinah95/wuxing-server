@@ -58,7 +58,7 @@ void init()
 void * handle_request(void* c_socket)
 {
     int *socket= (int *)c_socket;
-    int client_socket = *socket; 
+    int client_socket = *socket;
 
     char *buffer = malloc(BUFFER_SIZE);
     char *aux_buffer = malloc(BUFFER_SIZE);
@@ -123,6 +123,7 @@ void * handle_request(void* c_socket)
     close(file);
     free(aux_buffer);
     free(buffer);
+    pthread_exit(0);
 }
 
 void listen_requests()

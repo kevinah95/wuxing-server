@@ -4,7 +4,7 @@ LDFLAGS := -lpthread -lm -lrt
 
 #SRC_DIRS ?= ./
 
-TARGETS:= fifo_server fork_server client
+TARGETS:= fifo_server fork_server client thread_server
 MAINS  := $(addsuffix .o, $(TARGETS) )
 OBJ    := $(MAINS)
 #DEPS   :=

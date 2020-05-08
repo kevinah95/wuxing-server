@@ -128,9 +128,9 @@ int main()
 	/*
 		* Set signal handler for SIGCHLD :
 		*/
-	signal(SIGCHLD, sigchld_handler);
+	//signal(SIGCHLD, sigchld_handler);
 
-	sockfd = socket(PF_INET, SOCK_STREAM, 0);
+	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	int option_yes = 1;
 	setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &option_yes, sizeof(option_yes));
 

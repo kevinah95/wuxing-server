@@ -16,7 +16,7 @@
 
 struct sockaddr_in server; // Handle the socket address
 
-int server_fd; // Server file descriptor
+int socket_server_fd; // Server file descriptor
 
 char *ip; // Server IP address
 
@@ -155,7 +155,7 @@ void connect_to_server()
     {
         for (int i = 0; i < cycles; i++)
         {
-            if ((server_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
+            if ((socket_server_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
             {
                 error("ERROR: It was not possible to establish connection with the socket.\n");
             }
@@ -165,11 +165,11 @@ void connect_to_server()
             server.sin_addr.s_addr = inet_addr(ip);
             server.sin_port = htons(port);
 
-            if (connect(server_fd, (struct sockaddr *)&server, sizeof(server)) < 0)
+            if (connect(socket_server_fd, (struct sockaddr *)&server, sizeof(server)) < 0)
             {
                 error("ERROR: Connection with server failure.\n");
             }
-            thread_data[i].server_socket = server_fd;
+            thread_data[i].server_socket = socket_server_fd;
             thread_data[i].message = requested_file;
         }
 
@@ -182,7 +182,7 @@ void connect_to_server()
         index++;
     } while (index < threads);
 
-    close(server_fd);
+    close(socket_server_fd);
 }
 
 int main(int argc, char *argv[])

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <sys/file.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -16,7 +17,9 @@
 
 struct sockaddr_in server, client, cli_addr; // Handle the sockets' address
 
-int server_fd, client_socket; // Client and server file descriptors
+int socket_server_fd, client_socket; // Client and server file descriptors
+
+int on = 1;
 
 int response = OK_HTTP;
 
@@ -163,11 +166,11 @@ void * listen_requests(void* thread_index)
         sem_wait(&shared->full); 
         sem_wait(&shared->mutex); 
 
-        server_fd = shared->buffer[0];
+        socket_server_fd = shared->buffer[0];
 
         client_lenght = sizeof(client);
 
-        if ((client_socket = accept(server_fd, (struct sockaddr *)&client, &client_lenght)) < 0)
+        if ((client_socket = accept(socket_server_fd, (struct sockaddr *)&client, &client_lenght)) < 0)
         {
             printf("ERROR: It was not possible to accept the request.\n");
         }
@@ -184,9 +187,20 @@ void * listen_requests(void* thread_index)
 
 void init()
 {
-    server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    socket_server_fd = socket(AF_INET, SOCK_STREAM, 0);
+
+    /* allow server to reuse address when binding */
+	if (setsockopt(socket_server_fd, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof(on)) < 0)
+	{
+		perror("setsockopt SO_REUSEADDR");
+	}
+	/* allows UDP and TCP to reuse port (and address) when binding */
+	if (setsockopt(socket_server_fd, SOL_SOCKET, SO_REUSEPORT, (char *)&on, sizeof(on)) < 0)
+	{
+		perror("setsockopt SO_REUSEPORT");
+	}
     
-    if (server_fd < 0)
+    if (socket_server_fd < 0)
     {
         error("ERROR: It was impossible to open the Server.\n");
     }
@@ -198,13 +212,13 @@ void init()
     server.sin_addr.s_addr = htonl(INADDR_ANY);
 
     // Port and socket are bind
-    if (bind(server_fd, (struct sockaddr *)&server, sizeof(server)) < 0)
+    if (bind(socket_server_fd, (struct sockaddr *)&server, sizeof(server)) < 0)
     {
         error("ERROR: bind() failed. It was not possible to assign an address to the server.\n");
     }
 
     // Listen requests
-    if (listen(server_fd, 100) < 0)
+    if (listen(socket_server_fd, 100) < 0)
     {
         error("ERROR: listen() failed. It is not possible to listen in the assigned port.\n");
     }
@@ -224,7 +238,7 @@ void init()
         sem_wait(&shared->empty);
         sem_wait(&shared->mutex);
         
-        shared->buffer[0] = server_fd;
+        shared->buffer[0] = socket_server_fd;
         
         sem_post(&shared->mutex);
         sem_post(&shared->full);

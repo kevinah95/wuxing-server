@@ -113,8 +113,8 @@ void handle_request(int c_socket_fd)
 
 int main()
 {
-
-	int sockfd, ret;
+	int on = 1;
+	int socket_server_fd, ret;
 	struct sockaddr_in serverAddr;
 
 	int newSocket;
@@ -130,11 +130,19 @@ int main()
 		*/
 	signal(SIGCHLD, sigchld_handler);
 
-	sockfd = socket(PF_INET, SOCK_STREAM, 0);
-	int option_yes = 1;
-	setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &option_yes, sizeof(option_yes));
+	socket_server_fd = socket(AF_INET, SOCK_STREAM, 0);
+	/* allow server to reuse address when binding */
+	if (setsockopt(socket_server_fd, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof(on)) < 0)
+	{
+		perror("setsockopt SO_REUSEADDR");
+	}
+	/* allows UDP and TCP to reuse port (and address) when binding */
+	if (setsockopt(socket_server_fd, SOL_SOCKET, SO_REUSEPORT, (char *)&on, sizeof(on)) < 0)
+	{
+		perror("setsockopt SO_REUSEPORT");
+	}
 
-	if (sockfd < 0)
+	if (socket_server_fd < 0)
 	{
 		printf("[-]Error in connection:\n\t%s", strerror(errno));
 		exit(1);
@@ -146,7 +154,7 @@ int main()
 	serverAddr.sin_port = htons(PORT);
 	serverAddr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-	ret = bind(sockfd, (struct sockaddr *)&serverAddr, sizeof(serverAddr));
+	ret = bind(socket_server_fd, (struct sockaddr *)&serverAddr, sizeof(serverAddr));
 	if (ret < 0)
 	{
 		printf("[-]Error in binding:\n\t%s", strerror(errno));
@@ -154,7 +162,7 @@ int main()
 	}
 
 	printf("[+]Bind to port %d\n", PORT);
-	ret = listen(sockfd, 100) == 0;
+	ret = listen(socket_server_fd, 100) == 0;
 	if (ret)
 	{
 		printf("[+]Listening....\n");
@@ -166,15 +174,13 @@ int main()
 
 	while (1)
 	{
-		newSocket = accept(sockfd, (struct sockaddr *)&newAddr, &addr_size);
+		newSocket = accept(socket_server_fd, (struct sockaddr *)&newAddr, &addr_size);
 		if (newSocket < 0)
 		{
 			exit(1);
 		}
 		printf("Connection accepted from %s:%d\n", inet_ntoa(newAddr.sin_addr), ntohs(newAddr.sin_port));
 		childpid = fork();
-
-		printf("childpid=%d", childpid);
 		// Error
 		if (childpid < 0)
 		{
@@ -184,7 +190,7 @@ int main()
 		// Child
 		else if (childpid == 0)
 		{
-			close(sockfd);
+			close(socket_server_fd);
 			handle_request(newSocket);
 			break;
 		}
@@ -192,7 +198,6 @@ int main()
 		else
 		{
 			close(newSocket);
-			printf("here2\n");
 			if (waitpid(childpid, NULL, 0) < 0)
 			{
 				perror("Failed to collect child process");

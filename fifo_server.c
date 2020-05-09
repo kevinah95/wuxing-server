@@ -14,7 +14,7 @@ struct sockaddr_in server, client, cli_addr; // Handle the sockets' address
 
 unsigned int client_lenght;
 
-int server_fd, client_socket; // Client and server file descriptors
+int socket_server_fd, client_socket; // Client and server file descriptors
 
 int response = OK_HTTP;
 
@@ -27,11 +27,25 @@ void error(const char *msg)
 // Inits the server
 void init()
 {
-    server_fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (server_fd < 0)
+    int on = 1;
+    
+    socket_server_fd = socket(AF_INET, SOCK_STREAM, 0); // tcp_socket
+    if (socket_server_fd < 0)
     {
         error("ERROR: It was impossible to open the Server.\n");
     }
+
+    /* allow server to reuse address when binding */
+    if (setsockopt(socket_server_fd, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof(on)) < 0)
+    {
+        perror("setsockopt SO_REUSEADDR");
+    }
+    /* allows UDP and TCP to reuse port (and address) when binding */
+    if (setsockopt(socket_server_fd, SOL_SOCKET, SO_REUSEPORT, (char *)&on, sizeof(on)) < 0)
+    {
+        perror("setsockopt SO_REUSEPORT");
+    }
+
     bzero(&server, sizeof(server));
 
     // Information required by the server
@@ -40,16 +54,18 @@ void init()
     server.sin_addr.s_addr = htonl(INADDR_ANY);
 
     // Port and socket are bind
-    if (bind(server_fd, (struct sockaddr *)&server, sizeof(server)) < 0)
+    if (bind(socket_server_fd, (struct sockaddr *)&server, sizeof(server)) < 0)
     {
         error("ERROR: It was not possible to assign an address to the server.\n");
     }
 
     // Listen requests
-    if (listen(server_fd, 100) < 0)
+    if (listen(socket_server_fd, 100) < 0)
     {
         error("ERROR: It is not possible to listen in the assigned port.\n");
     }
+
+    printf("connection: %s:%d\n", inet_ntoa(server.sin_addr), server.sin_port);
 }
 
 void handle_request(int c_socket)
@@ -127,7 +143,7 @@ void listen_requests()
     {
         client_lenght = sizeof(client);
 
-        if ((client_socket = accept(server_fd, (struct sockaddr *)&client, &client_lenght)) < 0)
+        if ((client_socket = accept(socket_server_fd, (struct sockaddr *)&client, &client_lenght)) < 0)
         {
             printf("ERROR: It was not possible to accept the request.\n");
         }

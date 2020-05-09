@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <sys/file.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -18,7 +19,7 @@ struct sockaddr_in server, client; // Handle the sockets' address
 
 unsigned int client_lenght;
 
-int server_fd; // Server file descriptors
+int socket_server_fd, on = 1; // Server file descriptors
 
 int response = OK_HTTP;
 
@@ -30,8 +31,20 @@ void error(const char *msg)
 
 void init()
 {
-    server_fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (server_fd < 0)
+    socket_server_fd = socket(AF_INET, SOCK_STREAM, 0);
+
+    /* allow server to reuse address when binding */
+    if (setsockopt(socket_server_fd, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof(on)) < 0)
+    {
+        perror("setsockopt SO_REUSEADDR");
+    }
+    /* allows UDP and TCP to reuse port (and address) when binding */
+    if (setsockopt(socket_server_fd, SOL_SOCKET, SO_REUSEPORT, (char *)&on, sizeof(on)) < 0)
+    {
+        perror("setsockopt SO_REUSEPORT");
+    }
+
+    if (socket_server_fd < 0)
     {
         error("ERROR: It was impossible to open the Server.\n");
     }
@@ -43,21 +56,21 @@ void init()
     server.sin_addr.s_addr = htonl(INADDR_ANY);
 
     // Port and socket are bind
-    if (bind(server_fd, (struct sockaddr *)&server, sizeof(server)) < 0)
+    if (bind(socket_server_fd, (struct sockaddr *)&server, sizeof(server)) < 0)
     {
         error("ERROR: It was not possible to assign an address to the server.\n");
     }
 
     // Listen requests
-    if (listen(server_fd, 100) < 0)
+    if (listen(socket_server_fd, 100) < 0)
     {
         error("ERROR: It is not possible to listen in the assigned port.\n");
     }
 }
 
-void * handle_request(void* c_socket)
+void *handle_request(void *c_socket)
 {
-    int *socket= (int *)c_socket;
+    int *socket = (int *)c_socket;
     int client_socket = *socket;
 
     char *buffer = malloc(BUFFER_SIZE);
@@ -132,9 +145,9 @@ void listen_requests()
     while (1)
     {
         client_lenght = sizeof(client);
-        int *client_socket = malloc(sizeof(int)); 
+        int *client_socket = malloc(sizeof(int));
 
-        if ((*client_socket = accept(server_fd, (struct sockaddr *)&client, &client_lenght)) < 0)
+        if ((*client_socket = accept(socket_server_fd, (struct sockaddr *)&client, &client_lenght)) < 0)
         {
             printf("ERROR: It was not possible to accept the request.\n");
         }
@@ -144,7 +157,7 @@ void listen_requests()
 
             if ((pthread_create(&(threads), NULL, handle_request, client_socket)) != 0)
             {
-                close(server_fd);
+                close(socket_server_fd);
                 error("ERROR: Error creating pthread.\n");
             }
 

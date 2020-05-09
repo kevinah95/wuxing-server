@@ -1,5 +1,5 @@
 CC      := gcc -std=c11
-CCFLAGS := 
+CCFLAGS := -I.
 LDFLAGS := -lpthread -lm -lrt
 
 #SRC_DIRS ?= ./
@@ -20,4 +20,9 @@ $(OBJ): %.o : %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CCFLAGS)
 
 $(TARGETS): % : $(filter-out $(MAINS), $(OBJ)) %.o
-	$(CC) -o $@ $(LIBS) $^ $(CCFLAGS) $(LDFLAGS)
+	$(CC) -o $@ $^ $(CCFLAGS) $(LDFLAGS)
+
+test:
+	gcc -c -o tpool.o tpool.c -I.
+	gcc -c -o server.o server.c -I.
+	gcc -o server tpool.o server.o -I. -lpthread -lm -lrt

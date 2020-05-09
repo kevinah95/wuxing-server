@@ -82,7 +82,6 @@ void *get(void *threads_st)
 		// Read message from position 9 ignoring 'HTTP/2.0'
 		if ((received = recv(cycle_socket, transfer_buffer, 9, 0)) < 0)
 		{
-			printf("Recived %i\n", received);
 			error("ERROR: There was an error in the transfer of data or the connection was lost.\n");
 		}
 
@@ -102,7 +101,7 @@ void *get(void *threads_st)
 		bzero(transfer_buffer, BUFFER_SIZE);
 		char *aux_buffer;
 
-		if ((received = recv(cycle_socket, transfer_buffer, BUFFER_SIZE, 0)) <= 0)
+		if ((received = recv(cycle_socket, transfer_buffer, BUFFER_SIZE, 0)) < 0)
 		{
 			error("ERROR: There was an error in the transfer of data or the connection was lost.\n");
 		}

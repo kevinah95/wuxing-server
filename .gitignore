@@ -56,6 +56,9 @@ client
 fifo_server
 fork_server
 thread_server
+pre_threaded_server
+socketLib/slisten
+socketLib/saccept
 
 # Other files
 .DS_Store

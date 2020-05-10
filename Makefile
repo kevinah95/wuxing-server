@@ -17,8 +17,10 @@ fifo_server: fifo_server.o
 fork_server: fork_server.o
 	$(CC) -o fork_server fork_server.o $(LIBS) -lsock -lpthread
 
-pre_threaded_server: pre_threaded_server.o
-	$(CC) -o pre_threaded_server pre_threaded_server.o $(LIBS) -lsock -lpthread -lrt
+pre_threaded_server: 
+	gcc -c -o tpool.o tpool.c -I.
+	gcc -c -o pre_threaded_server.o pre_threaded_server.c -I.
+	gcc -o pre_threaded_server tpool.o pre_threaded_server.o ./socketLib/libsock.a -I. -lpthread -lm -lrt
 
 thread_server: thread_server.o
 	$(CC) -o thread_server thread_server.o $(LIBS) -lsock -lpthread
@@ -32,12 +34,9 @@ fifo_server.o: fifo_server.c
 fork_server.o: fork_server.c
 	$(CC) -o fork_server.o -c fork_server.c
 
-pre_threaded_server.o: pre_threaded_server.c
-	$(CC) -o pre_threaded_server.o -c pre_threaded_server.c
-
 thread_server.o: thread_server.c
 	$(CC) -o thread_server.o -c thread_server.c
 
 clean:
-	/bin/rm -f client fifo_server fork_server pre_threaded_server thread_server *.o core *~ #*
+	/bin/rm -f client fifo_server fork_server tpool pre_threaded_server thread_server *.o core *~ #*
 	cd socketLib && make clean

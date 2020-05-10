@@ -5,4 +5,4 @@ extern int slisten ();
 #define FIFO_PORT 51717
 #define FORK_PORT 51718
 #define THREAD_PORT 51719
-//#define PRE_THREAD_PORT 51720
+#define PRE_THREAD_PORT 51720

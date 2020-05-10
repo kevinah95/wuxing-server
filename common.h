@@ -1,4 +1,8 @@
 #include <sys/types.h>
+#include <stdio.h>
+#include <time.h>
+#include <unistd.h>
+#include <stdint.h>
 
 #define BUFFER_SIZE 1024 // Fixed buffer size
 
@@ -16,3 +20,11 @@ const char *SERVER_FILES = "./server_files/";
 
 // HTTP response
 const char *HTTP_RESPONSE = "HTTP/2.0 %d OK\r\nContent_type: Application/Octet-stream, text/html\r\n\n";
+
+struct timespec oldTime;
+
+struct timespec newTime;
+
+struct timespec shortNewTime;
+
+struct timespec shortOldTime;

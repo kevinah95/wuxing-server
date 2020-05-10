@@ -46,7 +46,7 @@ int slisten(int port)
     }
 
     // Listen requests
-    if (listen(socket_server_fd, 100) < 0)
+    if (listen(socket_server_fd, QUEUE_LISTENING_SIZE) < 0)
     {
         perror("ERROR: It is not possible to listen in the assigned port.\n");
     }

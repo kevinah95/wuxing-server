@@ -14,9 +14,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include "common.h"
+#include "socketLib/socket_lib.h"
 
-#define TCP_PORT  7878
-#define QUEUE_SIZE 10
 #define POOL_SIZE 4
 
 int response = 200;
@@ -102,13 +101,13 @@ void pthreads_factory(int argc, char * argv[])
 {
     if (argc != 2)
     {
-        error("ERROR: Please add the number of threads that the server will run.\n");
+        perror("ERROR: Please add the number of threads that the server will run.\n");
     }
     else
     {
         int num_of_threads = atoi(argv[1]);
         if (num_of_threads < 1){
-            error("ERROR: At least one thread is required.\n");
+            perror("ERROR: At least one thread is required.\n");
         }
         number_of_threads = num_of_threads;
         
@@ -124,7 +123,7 @@ int main(int argc, char *argv[]){
 
     if((listenfd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0))== -1)
     {
-        printf("Error : Could not create socket\n");
+        printf("Error: Could not create socket\n");
         printf("Errno %d\n",errno);
         return -1;
     }
@@ -141,7 +140,7 @@ int main(int argc, char *argv[]){
     }
 
     if(tcp_port==0)
-        tcp_port = TCP_PORT;
+        tcp_port = PRE_THREAD_PORT;
    
 
     memset(&serv_addr, '0', sizeof(serv_addr));
@@ -151,22 +150,22 @@ int main(int argc, char *argv[]){
     serv_addr.sin_port=htons(tcp_port);
 
     if(bind(listenfd,(struct sockaddr *)&serv_addr,sizeof(serv_addr))==-1){
-        printf("Error:Bindint with port # %d failed\n",tcp_port);
+        printf("Error: Binding with port # %d failed\n",tcp_port);
         printf("Errno %d\n",errno);
         if(errno == EADDRINUSE)
             printf("Another socket is already listening on the same port\n");
         return -1;
     }
 
-    if(listen(listenfd, QUEUE_SIZE) == -1){
-        printf("Error:Failed to listen\n");
+    if(listen(listenfd, QUEUE_LISTENING_SIZE) == -1){
+        printf("Error: Failed to listen\n");
         printf("Errno %d\n",errno);
         if(errno == EADDRINUSE)
             printf("Another socket is already listening on the same port\n");
         return -1;
     }
 
-    printf("Lintning on TCP port %d\n",tcp_port);
+    printf("Listening on TCP port %d\n",tcp_port);
 
     tpool_t *tp=tpool_create(number_of_threads);
 
@@ -187,7 +186,7 @@ int main(int argc, char *argv[]){
 }
 
 void ctrl_c_signal_handler(int sig_num){
-    printf("Exiting\n");
+    printf("\nExiting\n");
     stop=true;
 }
 

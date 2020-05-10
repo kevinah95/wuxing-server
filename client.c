@@ -74,11 +74,12 @@ void receive_arguments(int argc, char *argv[])
 void *get(void *threads_st)
 {
     struct thread_info_st *thread = (struct thread_info_st *)threads_st;
-    gettimeofday(&shortOldTime, NULL);
-    old_short_period_time = (int64_t)(shortOldTime.tv_sec) * (int64_t)1000000000 + (int64_t)(shortOldTime.tv_nsec);
+
 
     for (int i = 0; i < cycles; i++)
     {
+        gettimeofday(&shortOldTime, NULL);
+        old_short_period_time = (int64_t)(shortOldTime.tv_sec) * (int64_t)1000000000 + (int64_t)(shortOldTime.tv_nsec);
         struct thread_info_st cycle_thread = thread[i];
         int cycle_socket = cycle_thread.server_socket;
         char *cycle_message = cycle_thread.message;

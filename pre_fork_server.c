@@ -16,12 +16,10 @@
 
 int response;
 int processLimit;
-int alarmFlag = 0;
 
-int childflag = 0;
+int client_run = 1;
 
-void ChildExitSignalHandler();
-static void child_handler(void);
+void child_handler();
 
 void handle_request(int c_socket_fd)
 {
@@ -98,12 +96,7 @@ int main(int argc, char *argv[])
 {
   pid_t processID;
   int processCt;
-  struct sigaction sa;
-  sigemptyset(&sa.sa_mask);
-  sa.sa_flags = 0;
-  sa.sa_handler = child_handler;
 
-  sigaction(SIGCHLD, &sa, NULL);
   if (argc != 2)
   {
     fprintf(stderr, "Usage:  %s <N-Forks>\n", argv[0]);
@@ -120,7 +113,6 @@ int main(int argc, char *argv[])
     error("PRE-FORK-Server: slisten");
   }
 
-  //signal(SIGINT,ChildExitSignalHandler);
 
   for (processCt = 0; processCt < processLimit; processCt++)
   {
@@ -132,6 +124,7 @@ int main(int argc, char *argv[])
     }
     else if (processID == 0)
     {
+      signal(SIGINT, child_handler);
       ProcessMain(server_socket);
       exit(0);
     }
@@ -139,20 +132,12 @@ int main(int argc, char *argv[])
 
   pid_t pid;
   int status;
-  /* while (processLimit > 0)
+  while (processLimit > 0)
   {
     pid = wait(&status);
     printf("Child with PID %ld exited with status 0x%x.\n", (long)pid, status);
     --processLimit;
-  } */
-  while (!alarmFlag)
-  {
-    printf ("Enter loop %d\n", processLimit);
-    pause(); /* Wait for a signal */
   }
-  
-    printf ("Loop ends due to alarm signal\n");
-    
 
   return 0;
 }
@@ -160,8 +145,7 @@ int main(int argc, char *argv[])
 void ProcessMain(int server_socket)
 {
   int client_socket;
-  signal(SIGINT,ChildExitSignalHandler);
-  while (!childflag) /* Run forever */
+  while (client_run) /* Run forever */
   {
     client_socket = saccept(server_socket);
     printf("with child process: %d\n", (unsigned int)getpid());
@@ -170,38 +154,7 @@ void ProcessMain(int server_socket)
 
 }
 
-static void
-child_handler(void)
-{
-  childflag = 1;
-  printf(">>>childflag");
-    pid_t pid;
-    int status;
-
-    /* EEEEXTEERMINAAATE! */
-    while((pid = waitpid(-1, &status, WNOHANG)) > 0)
-        ;
-}
-
-
-
-void ChildExitSignalHandler()
-{
-  pid_t processID; /* Process ID from fork() */
-  alarmFlag = 1;
-  printf("---Child with PID %ld exited.processLimit %d\n", (long)processID, processLimit);
-  while (processLimit) /* Clean up all zombies */
-  {
-    processID = waitpid((pid_t)-1, NULL, WNOHANG); /* Non-blocking wait */
-    printf("Child with PID %ld exited.processLimit %d\n", (long)processID, processLimit);
-    if (processID < 0){ /* waitpid() error? */
-      printf("waitpid() failed");
-      break;
-    }
-    else if (processID == 0){ /* No child to wait on */
-      break;
-    }
-    else
-      processLimit--; /* Cleaned up after a child */
-  }
+void child_handler(){
+  client_run = 0;
+  printf("entre child_handler");
 }

@@ -6,12 +6,12 @@ El propósito de este proyecto es contrastar varias posibilidades de diseño de 
 
 - Ejecutar el comando `make` dentro del directorio del proyecto.
 - Ejecutar los siguientes comandos para iniciar los servidores y el cliente:
-  - Versión secuencial: ./fifo_server
-  - Versión forked: ./fork_server
-  - Versión threaded: ./thread_server
-  - Versión pre-forked: ./pre_forked_server <cantidadDeProcesos>
-  - Versión pre-threaded: ./pre_threated_server <cantidadDeHilos>
-  - Cliente: ./client <ip> <puerto> <archivo> <N-threads> <N-ciclos>
+  - Versión secuencial: `./fifo_server`
+  - Versión forked: `./fork_server`
+  - Versión threaded: `./thread_server`
+  - Versión pre-forked: `./pre_forked_server <cantidadDeProcesos>`
+  - Versión pre-threaded: `./pre_threated_server <cantidadDeHilos>`
+  - Cliente: `./client <ip> <puerto> <archivo> <N-threads> <N-ciclos>`
 
 Nota: dentro de la carpeta server_files se encuentran algunos archivos de ejemplo para que el cliente los solicite y los servidores sean capaces de enviarlos de vuelta. Un ejemplo de ejecución del cliente es:
 

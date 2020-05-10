@@ -14,6 +14,7 @@
 #include <errno.h>
 #include <sys/mman.h>
 #include "common.h"
+#include "socketLib/socket_lib.h"
 
 struct sockaddr_in server, client; // Handle the sockets' address
 
@@ -29,43 +30,15 @@ void error(const char *msg)
     exit(1);
 }
 
-void init()
-{
-    socket_server_fd = socket(AF_INET, SOCK_STREAM, 0);
+int setup_listen() {
+  int socket_listen;
 
-    /* allow server to reuse address when binding */
-    if (setsockopt(socket_server_fd, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof(on)) < 0)
-    {
-        perror("setsockopt SO_REUSEADDR");
-    }
-    /* allows UDP and TCP to reuse port (and address) when binding */
-    if (setsockopt(socket_server_fd, SOL_SOCKET, SO_REUSEPORT, (char *)&on, sizeof(on)) < 0)
-    {
-        perror("setsockopt SO_REUSEPORT");
-    }
+  if ((socket_listen = slisten(THREAD_PORT)) < 0) 
+  {
+    error("FIFO-Server: slisten");
+  }
 
-    if (socket_server_fd < 0)
-    {
-        error("ERROR: It was impossible to open the Server.\n");
-    }
-    bzero(&server, sizeof(server));
-
-    // Information required by the server
-    server.sin_port = htons(THREAD_PORT);
-    server.sin_family = AF_INET;
-    server.sin_addr.s_addr = htonl(INADDR_ANY);
-
-    // Port and socket are bind
-    if (bind(socket_server_fd, (struct sockaddr *)&server, sizeof(server)) < 0)
-    {
-        error("ERROR: It was not possible to assign an address to the server.\n");
-    }
-
-    // Listen requests
-    if (listen(socket_server_fd, 100) < 0)
-    {
-        error("ERROR: It is not possible to listen in the assigned port.\n");
-    }
+  return socket_listen;
 }
 
 void *handle_request(void *c_socket)
@@ -139,7 +112,7 @@ void *handle_request(void *c_socket)
     pthread_exit(0);
 }
 
-void listen_requests()
+void listen_requests(int socket_listen)
 {
     pthread_t threads;
     while (1)
@@ -147,7 +120,7 @@ void listen_requests()
         client_lenght = sizeof(client);
         int *client_socket = malloc(sizeof(int));
 
-        if ((*client_socket = accept(socket_server_fd, (struct sockaddr *)&client, &client_lenght)) < 0)
+        if ((*client_socket = accept(socket_listen, (struct sockaddr *)&client, &client_lenght)) < 0)
         {
             printf("ERROR: It was not possible to accept the request.\n");
         }
@@ -157,7 +130,7 @@ void listen_requests()
 
             if ((pthread_create(&(threads), NULL, handle_request, client_socket)) != 0)
             {
-                close(socket_server_fd);
+                close(socket_listen);
                 error("ERROR: Error creating pthread.\n");
             }
 
@@ -171,7 +144,7 @@ void listen_requests()
 int main(int argc, char *argv[])
 {
     printf("INFO: Initializing THREAD server.\n");
-    init();
-    listen_requests();
+    int socket_listen = setup_listen();
+    listen_requests(socket_listen);
     return 0;
 }

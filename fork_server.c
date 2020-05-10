@@ -133,7 +133,7 @@ int main()
     char buffer[BUFFER_SIZE];
     pid_t childpid;
 
-    printf("INFO: Initializing FIFO server.\n");
+    printf("INFO: Initializing Fork server.\n");
 
     int socket_listen = setup_listen();
 

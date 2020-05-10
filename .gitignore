@@ -59,6 +59,8 @@ thread_server
 pre_threaded_server
 server
 test_pool
+socketLib/slisten
+socketLib/saccept
 
 # Other files
 .DS_Store

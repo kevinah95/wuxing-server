@@ -9,12 +9,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include "common.h"
-
-struct sockaddr_in server, client, cli_addr; // Handle the sockets' address
-
-unsigned int client_lenght;
-
-int socket_server_fd, client_socket; // Client and server file descriptors
+#include "socketLib/socket_lib.h"
 
 int response = OK_HTTP;
 
@@ -24,48 +19,15 @@ void error(const char *msg)
     exit(1);
 }
 
-// Inits the server
-void init()
-{
-    int on = 1;
-    
-    socket_server_fd = socket(AF_INET, SOCK_STREAM, 0); // tcp_socket
-    if (socket_server_fd < 0)
-    {
-        error("ERROR: It was impossible to open the Server.\n");
-    }
+int setup_listen() {
+  int socket_listen;
 
-    /* allow server to reuse address when binding */
-    if (setsockopt(socket_server_fd, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof(on)) < 0)
-    {
-        perror("setsockopt SO_REUSEADDR");
-    }
-    /* allows UDP and TCP to reuse port (and address) when binding */
-    if (setsockopt(socket_server_fd, SOL_SOCKET, SO_REUSEPORT, (char *)&on, sizeof(on)) < 0)
-    {
-        perror("setsockopt SO_REUSEPORT");
-    }
+  if ((socket_listen = slisten(FIFO_PORT)) < 0) 
+  {
+    error("FIFO-Server: slisten");
+  }
 
-    bzero(&server, sizeof(server));
-
-    // Information required by the server
-    server.sin_port = htons(FIFO_PORT);
-    server.sin_family = AF_INET;
-    server.sin_addr.s_addr = htonl(INADDR_ANY);
-
-    // Port and socket are bind
-    if (bind(socket_server_fd, (struct sockaddr *)&server, sizeof(server)) < 0)
-    {
-        error("ERROR: It was not possible to assign an address to the server.\n");
-    }
-
-    // Listen requests
-    if (listen(socket_server_fd, 100) < 0)
-    {
-        error("ERROR: It is not possible to listen in the assigned port.\n");
-    }
-
-    printf("connection: %s:%d\n", inet_ntoa(server.sin_addr), server.sin_port);
+  return socket_listen;
 }
 
 void handle_request(int c_socket)
@@ -137,29 +99,30 @@ void handle_request(int c_socket)
     free(buffer);
 }
 
-void listen_requests()
+void listen_requests(int socket_listen)
 {
+    int  socket_talk;
     while (1)
     {
-        client_lenght = sizeof(client);
-
-        if ((client_socket = accept(socket_server_fd, (struct sockaddr *)&client, &client_lenght)) < 0)
+        socket_talk = saccept(socket_listen);
+        if (socket_talk < 0) 
         {
-            printf("ERROR: It was not possible to accept the request.\n");
+            fprintf(stderr, "An error occured in the server. A connection failed because of \n");
+            perror("");
+            exit(1);
         }
-        else
-        {
-            printf("Attending client: %s\n", inet_ntoa(client.sin_addr));
-            handle_request(client_socket);
-            close(client_socket);
-        }
+        
+        handle_request(socket_talk);
+        close(socket_talk);
     }
 }
 
 int main(int argc, char *argv[])
 {
     printf("INFO: Initializing FIFO server.\n");
-    init();
-    listen_requests();
+    
+    int socket_listen = setup_listen();
+
+    listen_requests(socket_listen);
     return 0;
 }

@@ -6,3 +6,5 @@ extern int slisten ();
 #define FORK_PORT 51718
 #define THREAD_PORT 51719
 #define PRE_THREAD_PORT 51720
+
+#define QUEUE_LISTENING_SIZE 100

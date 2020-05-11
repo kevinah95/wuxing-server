@@ -40,34 +40,6 @@ int setup_listen()
     return socket_listen;
 }
 
-void parent_handler()
-{
-  stop_server = true;
-  printf("The server is going to close gracefully after next client request\n");
-}
-
-void child_handler()
-{
-    pid_t processID;
-    /* Clean up all child zombies */
-    while (childProcCount)
-    {
-        /* Non-blocking wait */
-        processID = waitpid((pid_t)-1, NULL, WNOHANG);
-        if (processID < 0)
-        {
-            perror("waitpid() failed");
-            exit(1);
-        }
-        else if (processID == 0)
-            break;
-        else{
-            childProcCount--;
-        }
-    }
-}
-
-
 void handle_request(int c_socket_fd)
 {
     char *buffer = malloc(BUFFER_SIZE);
@@ -154,31 +126,7 @@ int main()
 
     server_socket = setup_listen();
 
-    signal_action.sa_handler = child_handler;
-    if (sigfillset(&signal_action.sa_mask) < 0)
-    {
-        perror("sigfillset() failed");
-        exit(1);
-    }
-    /* SA_RESTART causes interrupted system calls to be restarted */
-    signal_action.sa_flags = SA_RESTART;
-
-    /* Set signal disposition for child-termination signals */
-    if (sigaction(SIGCHLD, &signal_action, 0) < 0)
-    {
-        perror("sigfillset() failed");
-        exit(1);
-    }
-
-    sa.sa_handler = parent_handler;
-    sa.sa_flags = SA_RESTART;
-    sigemptyset(&sa.sa_mask);
-
-    if (sigaction(SIGINT, &sa, NULL) == -1) {
-        perror("sigaction");
-        exit(1);
-    }
-    while (!stop_server)
+    while (1)
     {
         client_socket = accept(server_socket, (struct sockaddr *)&newAddr, &addr_size);
         if (client_socket < 0)

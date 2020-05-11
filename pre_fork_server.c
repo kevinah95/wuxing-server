@@ -192,8 +192,6 @@ void worker(int server_socket)
 void child_handler()
 {
   c_stop = true;
-  printf(c_stop ? "c_stop:true\n" : "c_stop:false\n");
-  printf("enter child_handler %ld\n", getpid());
   exit(1);
 }
 

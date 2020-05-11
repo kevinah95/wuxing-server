@@ -120,7 +120,6 @@ int main(int argc, char *argv[]){
     pthreads_factory(argc,argv);
     struct sockaddr_in serv_addr;
     char opt;
-
     if((listenfd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0))== -1)
     {
         printf("Error: Could not create socket\n");
@@ -178,7 +177,7 @@ int main(int argc, char *argv[]){
             tpool_add_work(tp,handle_request,connfd);
         }
     }
-    
+
     close(listenfd);
     tpool_destroy(tp);//wait until all tasks are finished
     

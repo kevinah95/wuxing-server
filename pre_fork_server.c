@@ -161,11 +161,6 @@ int main(int argc, char *argv[])
   }
 
   printf("parent Stopped\n");
-  /* pid_t pid;
-  int status;
-
-  waitpid(pid, &status, 0);
-  printf("Child with PID %ld exited with status 0x%x.\n", (long)pid, status); */
 
   while (processLimit) /* Clean up all zombies */
     {
@@ -178,20 +173,6 @@ int main(int argc, char *argv[])
             processLimit--;  /* Cleaned up after a child */
     }
   printf("parent TERM\n");
-  /* pid_t pid;
-  int status;
-
-  waitpid(pid, &status, 0);
-  printf("Child with PID %ld exited with status 0x%x.\n", (long)pid, status); */
-
-  /* pid_t pid;
-  int status;
-  while (processLimit > 0)
-  {
-    pid = wait(&status);
-    printf("Child with PID %ld exited with status 0x%x.\n", (long)pid, status);
-    --processLimit;
-  } */
 
   return 0;
 }
@@ -213,45 +194,20 @@ void child_handler()
   c_stop = true;
   printf(c_stop ? "c_stop:true\n" : "c_stop:false\n");
   printf("enter child_handler %ld\n", getpid());
-  //signal(SIGUSR1, child_handler);
   exit(1);
 }
 
 void parent_handler()
 {
-  //kill(pid2, SIGUSR1);
-  /* pid_t pid;
-  while ((pid = waitpid(-1, NULL, 0))>0) {
-    if (errno == ECHILD) {
-        break;
-    }
-  }
-  sleep(5); */
   kill(pid2, SIGUSR1);
   stop = true;
   c_stop = true;
-  
 }
 
 void ChildExitSignalHandler()
 {
   pid_t processID; /* Process ID from fork() */
 
-  // while (processLimit) /* Clean up all zombies */
-  // {
-  //   processID = waitpid((pid_t)-1, NULL, WNOHANG); /* Non-blocking wait */
-  //   if (processID < 0)                             /* waitpid() error? */
-  //     printf("waitpid() failed\n");
-  //   else if (processID == 0)
-  //   { /* No child to wait on */
-  //     printf("No child to wait on\n");
-  //     break;
-  //   }
-  //   else{
-  //     printf("Cleaned up after a child %d\n", processID);
-  //     processLimit--; /* Cleaned up after a child */
-  //   }
-  // }
   while (processID = waitpid(-1, NULL, WNOHANG)) {
     if (errno == ECHILD) {
         break;

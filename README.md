@@ -23,3 +23,6 @@ Nota: dentro de la carpeta server_files se encuentran algunos archivos de ejempl
 - Versión threaded: 51719
 - Versión pre-forked: 51720
 - Versión pre-threaded: 51721
+
+## Developed by
+Kevin Hernández, [Steven Solano](https://github.com/solanors20), [Elisa Argueta](https://github.com/elisa7143), and [Jose Pablo Araya](https://github.com/arayajosepablo)

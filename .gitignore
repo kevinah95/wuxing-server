@@ -57,6 +57,9 @@ fifo_server
 fork_server
 thread_server
 pre_threaded_server
+pre_fork_server
+server
+test_pool
 socketLib/slisten
 socketLib/saccept
 

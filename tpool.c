@@ -164,6 +164,12 @@ bool tpool_add_work(tpool_t *tp, thread_func_t func, void *arg)
     if (work == NULL)
         return false;
 
+    if (tp->thread_cnt == 2){
+      printf("Limit");
+    }
+    printf("Limit: %u\n", tp->thread_cnt);
+    printf("Limit2: %u\n", tp->working_cnt);
+
     pthread_mutex_lock(&(tp->work_mutex));
     if (tp->work_first == NULL) {
         tp->work_first = work;

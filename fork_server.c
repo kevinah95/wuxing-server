@@ -11,10 +11,16 @@
 #include <signal.h>
 #include <sys/wait.h>
 #include <errno.h>
+#include <stdbool.h>
 #include "common.h"
 #include "socketLib/socket_lib.h"
 
 int response = OK_HTTP;
+
+int childProcCount = 0;
+struct sigaction signal_action, sa;
+static bool stop_server = false;
+static int client_socket, server_socket;
 
 void error(const char *msg)
 {
@@ -22,33 +28,45 @@ void error(const char *msg)
     exit(1);
 }
 
-int setup_listen() {
-  int socket_listen;
-
-  if ((socket_listen = slisten(FORK_PORT)) < 0) 
-  {
-    error("Fork-Server: slisten");
-  }
-
-  return socket_listen;
-}
-
-/*
- * Process Terminated Child processes:
- */
-void sigchld_handler(int signo)
+int setup_listen()
 {
-    pid_t PID;
-    int status;
+    int socket_listen;
 
-    do
+    if ((socket_listen = slisten(FORK_PORT)) < 0)
     {
-        PID = waitpid(-1, &status, WNOHANG);
-    } while (PID != -1);
+        error("Fork-Server: slisten");
+    }
 
-    // Re-instate handler
-    signal(SIGCHLD, sigchld_handler);
+    return socket_listen;
 }
+
+void parent_handler()
+{
+  stop_server = true;
+  printf("The server is going to close gracefully after next client request\n");
+}
+
+void child_handler()
+{
+    pid_t processID;
+    /* Clean up all child zombies */
+    while (childProcCount)
+    {
+        /* Non-blocking wait */
+        processID = waitpid((pid_t)-1, NULL, WNOHANG);
+        if (processID < 0)
+        {
+            perror("waitpid() failed");
+            exit(1);
+        }
+        else if (processID == 0)
+            break;
+        else{
+            childProcCount--;
+        }
+    }
+}
+
 
 void handle_request(int c_socket_fd)
 {
@@ -118,14 +136,13 @@ void handle_request(int c_socket_fd)
     close(file);
     free(aux_buffer);
     free(buffer);
+    close(c_socket_fd);
 }
 
 int main()
 {
     int socket_server_fd, ret;
     struct sockaddr_in serverAddr;
-
-    int newSocket;
     struct sockaddr_in newAddr;
 
     socklen_t addr_size;
@@ -135,15 +152,36 @@ int main()
 
     printf("INFO: Initializing Fork server.\n");
 
-    int socket_listen = setup_listen();
+    server_socket = setup_listen();
 
-    // Set signal handler for SIGCHLD
-    signal(SIGCHLD, sigchld_handler);
-
-    while (1)
+    signal_action.sa_handler = child_handler;
+    if (sigfillset(&signal_action.sa_mask) < 0)
     {
-        newSocket = accept(socket_listen, (struct sockaddr *)&newAddr, &addr_size);
-        if (newSocket < 0)
+        perror("sigfillset() failed");
+        exit(1);
+    }
+    /* SA_RESTART causes interrupted system calls to be restarted */
+    signal_action.sa_flags = SA_RESTART;
+
+    /* Set signal disposition for child-termination signals */
+    if (sigaction(SIGCHLD, &signal_action, 0) < 0)
+    {
+        perror("sigfillset() failed");
+        exit(1);
+    }
+
+    sa.sa_handler = parent_handler;
+    sa.sa_flags = SA_RESTART;
+    sigemptyset(&sa.sa_mask);
+
+    if (sigaction(SIGINT, &sa, NULL) == -1) {
+        perror("sigaction");
+        exit(1);
+    }
+    while (!stop_server)
+    {
+        client_socket = accept(server_socket, (struct sockaddr *)&newAddr, &addr_size);
+        if (client_socket < 0)
         {
             exit(1);
         }
@@ -152,30 +190,25 @@ int main()
         // Error
         if (childpid < 0)
         {
-            close(newSocket);
+            close(client_socket);
             continue;
         }
         // Child
         else if (childpid == 0)
         {
-            close(socket_listen);
-            handle_request(newSocket);
-            break;
+            close(server_socket);
+            handle_request(client_socket);
+            exit(0);
         }
-        // Parent
-        else
-        {
-            close(newSocket);
-            if (waitpid(childpid, NULL, 0) < 0)
-            {
-                perror("Failed to collect child process");
-                break;
-            }
-            continue;
-        };
+
+        printf("with child process: %u\n", childpid);
+        close(client_socket);
+        childProcCount++;
     }
 
-    close(newSocket);
+    printf("parent Stopped\n");
 
     return 0;
 }
+
+

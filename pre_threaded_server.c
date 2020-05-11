@@ -116,7 +116,7 @@ void pthreads_factory(int argc, char * argv[])
 
 int main(int argc, char *argv[]){
     int listenfd=0,connfd=0;
-    int tcp_port=0, on=0;
+    int tcp_port=0, on=1;
     pthreads_factory(argc,argv);
     struct sockaddr_in serv_addr;
     char opt;

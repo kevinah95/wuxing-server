@@ -17,6 +17,8 @@ Nota: dentro de la carpeta server_files se encuentran algunos archivos de ejempl
 
 ```./client 127.0.0.1 51719 wuxing.png 3 4```
 
+Para los servidores pre-forked y pre-threaded, se debe usar cntrl-c para detenerlos elegantemente.
+
 ## 2. Puertos de los servidores
 - Versión secuencial: 51717
 - Versión forked: 51718

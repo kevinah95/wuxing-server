@@ -1,5 +1,6 @@
 #include <pthread.h>
 #include <tpool.h>
+#include <stdlib.h>
 
 struct tpool_work {
     thread_func_t      func;

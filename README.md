@@ -25,3 +25,6 @@ Para los servidores pre-forked y pre-threaded, se debe usar cntrl-c para detener
 - Versión threaded: 51719
 - Versión pre-forked: 51720
 - Versión pre-threaded: 51721
+
+## Desarrollado por
+Kevin Hernández, [Steven Solano](https://github.com/solanors20), [Elisa Argueta](https://github.com/elisa7143), and [Jose Pablo Araya](https://github.com/arayajosepablo)

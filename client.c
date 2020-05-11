@@ -161,7 +161,9 @@ void *get(void *threads_st)
         new_short_period_time = (int64_t)(shortNewTime.tv_sec) * (int64_t)1000000000 + (int64_t)(shortNewTime.tv_nsec);
         times[l] = new_short_period_time - old_short_period_time;
         total_files_transfered += 1;
-        printf("File transfer ended.\n");
+        if(file_output == 0) {
+            printf("File transfer ended.\n");
+        }
         l = l - 1;
     }
 }
@@ -239,7 +241,7 @@ int server_statistics(){
     printf("Highest file transfering period of time =  %lu (us)\n", highest_file_transfered_time);
     printf("Shortest file transfering period of time = %lu  (us)\n", shortest_file_transfered_time);
     printf("---------------------------------------------------------\n");
-    printf("         Files transfered in microseconds\n");
+    printf("     Time spent transfering files in microseconds\n");
     printf("---------------------------------------------------------\n");
     long total_time = 0;
     for (int s=0; s < num_times; s++){
@@ -247,10 +249,12 @@ int server_statistics(){
         printf("File %d            %lu  (us)\n", (s+1), times[s]);
     }
     printf("---------------------------------------------------------\n");
-    printf("         Files transfered per percentage\n");
+    printf("    Time spent transfering files per percentage\n");
     printf("---------------------------------------------------------\n");
     for (int s=0; s < num_times; s++){
-        printf("File %d            %lu  (%)\n", (s+1), (times[s] * 100 / total_time));
+        float a = times[s] * 100;
+        a = a / total_time;
+        printf("File %d            %.1f  (%)\n", (s+1), a);
     }
 
 
